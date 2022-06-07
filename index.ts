@@ -3,15 +3,24 @@ import {
   queryMethod,
   prop,
   getModelForClass,
+  DocumentType,
   mongoose
 } from '@typegoose/typegoose';
 import { MongoMemoryServer } from 'mongodb-memory-server-core';
-import { IObjectWithTypegooseFunction } from "@typegoose/typegoose/lib/types";
+import { Document, HydratedDocument, Query } from "mongoose";
+
 
 // Read about query methods here https://typegoose.github.io/typegoose/docs/api/decorators/query-method
 
+type ArgumentTypes<F extends Function> = F extends (...args: infer A) => any ? A : never;
+
+type QueryWithHelpersFixed<TArgs, TDocType, TQueryHelpers> = (TArgs) => Query<
+  Array<HydratedDocument<DocumentType<TDocType, TQueryHelpers>, object, object>>,
+  Document<TDocType, TQueryHelpers>
+  >
+
 interface QueryHelpers {
-  findByName: types.AsQueryMethod<typeof findByName>;
+  findByName: QueryWithHelpersFixed<ArgumentTypes<typeof findByName>, Person, QueryHelpers>
 }
 
 function findByName(this: types.QueryHelperThis<typeof Person, QueryHelpers>, name: string) {
@@ -79,9 +88,7 @@ class Person {
 
     // For when addresses are a mixed type
     // ⚠️ Type error ⚠️
-    // console.log(doc, doc.addresses[0].line1)
-    const docCasted = (doc as any) as mongoose.Document<any, QueryHelpers> & Person & IObjectWithTypegooseFunction & { _id: (mongoose.Document<any, QueryHelpers> & Person & IObjectWithTypegooseFunction)["_id"] }
-    console.log(doc, docCasted.addresses[0].line1)
+    console.log(doc, doc.addresses[0].line1)
   }
 
   process.exit(0)
