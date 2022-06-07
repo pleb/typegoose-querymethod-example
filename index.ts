@@ -13,12 +13,12 @@ import { Document, HydratedDocument, Query } from "mongoose";
 // Read about query methods here https://typegoose.github.io/typegoose/docs/api/decorators/query-method
 type OmitFirstArgument<F> = F extends (x: any, ...args: infer P) => infer R ? (...args: P) => R : never
 
-type ArgumentTypes<F extends Function> = OmitFirstArgument<F>
+type ArgumentTypes<F extends (...args: any) => any> = OmitFirstArgument<F>
 
 type QueryWithHelpersFixed<TDocType, TQueryHelpers, TSearchArgs = void>
   = TSearchArgs extends void
   ? () => Query<Array<HydratedDocument<DocumentType<TDocType, TQueryHelpers>, object, object>>, Document<TDocType, TQueryHelpers>>
-  : (TArgs) => Query<Array<HydratedDocument<DocumentType<TDocType, TQueryHelpers>, object, object>>, Document<TDocType, TQueryHelpers>>
+  : (TSearchArgs) => Query<Array<HydratedDocument<DocumentType<TDocType, TQueryHelpers>, object, object>>, Document<TDocType, TQueryHelpers>>
 
 interface QueryHelpers {
   findByName: QueryWithHelpersFixed<Person, QueryHelpers, ArgumentTypes<typeof findByName>>
