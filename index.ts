@@ -15,13 +15,15 @@ type OmitFirstArgument<F> = F extends (x: any, ...args: infer P) => infer R ? (.
 
 type ArgumentTypes<F extends (...args: any) => any> = OmitFirstArgument<F>
 
+type ParametersRestrictive<F extends Function> = F extends (...args: infer A) => any ? A : never;
+
 // type QueryWithHelpersFixed<TDocType, TQueryHelpers, TSearchArgs = void>
 //   = TSearchArgs extends void
 //   ? () => Query<Array<HydratedDocument<DocumentType<TDocType, TQueryHelpers>, object, object>>, Document<TDocType, TQueryHelpers>>
 //   : (TSearchArgs) => Query<Array<HydratedDocument<DocumentType<TDocType, TQueryHelpers>, object, object>>, Document<TDocType, TQueryHelpers>>
 
-type QueryWithHelpersFixed<TDocType, TQueryHelpers, TSearchArgs extends (...args: any) => any>
-  = (...args: [ArgumentTypes<TSearchArgs>]) => Query<Array<HydratedDocument<DocumentType<TDocType, TQueryHelpers>, object, object>>, Document<TDocType, TQueryHelpers>>
+type QueryWithHelpersFixed<TDocType, TQueryHelpers, TSearchArgs extends Function>
+  = (...args: ParametersRestrictive<TSearchArgs>) => Query<Array<HydratedDocument<DocumentType<TDocType, TQueryHelpers>, object, object>>, Document<TDocType, TQueryHelpers>>
 
 type QueryWithHelpersWithArgsFixed<TDocType, TQueryHelpers>
   = () => Query<Array<HydratedDocument<DocumentType<TDocType, TQueryHelpers>, object, object>>, Document<TDocType, TQueryHelpers>>
@@ -29,7 +31,7 @@ type QueryWithHelpersWithArgsFixed<TDocType, TQueryHelpers>
 interface QueryHelpers {
   // findByName: QueryWithHelpersFixed<Person, QueryHelpers, ArgumentTypes<typeof findByName>>
   findByName: QueryWithHelpersFixed<Person, QueryHelpers, typeof findByName>
-  findByMultiArg: QueryWithHelpersFixed<Person, QueryHelpers, typeof findByName>
+  findByMultiArg: QueryWithHelpersFixed<Person, QueryHelpers, typeof findByMultiArg>
   findByNoArg: QueryWithHelpersWithArgsFixed<Person, QueryHelpers>
 }
 
