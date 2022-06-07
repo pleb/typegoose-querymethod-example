@@ -101,11 +101,11 @@ class Person {
   const docs = await PersonModel.find().findByName('n1')
 
   const a = await PersonModel.find().findByNoArg() // should not fail ✅
-  const b = await PersonModel.find().findByName('n1') // should not fail ❌
-  const c = await PersonModel.find().findByName() // should fail ❌
+  const b = await PersonModel.find().findByName('n1') // should not fail ✅
+  const c = await PersonModel.find().findByName() // should fail ✅
   const d = await PersonModel.find().findByName('n1', 'b2')  // should fail ✅
-  const e = await PersonModel.find().findByName(1) // should fail ❌
-  const f = await PersonModel.find().findByMultiArg('n1', 2) // should not fail ❌
+  const e = await PersonModel.find().findByName(1) // should fail ✅
+  const f = await PersonModel.find().findByMultiArg('n1', 2) // should not fail ✅
 
   for (let doc of docs) {
     // For when addresses are a sub-doc
