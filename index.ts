@@ -11,21 +11,25 @@ import { Document, HydratedDocument, Query } from "mongoose";
 
 
 // Read about query methods here https://typegoose.github.io/typegoose/docs/api/decorators/query-method
+type OmitFirstArgument<F> = F extends (x: any, ...args: infer P) => infer R ? (...args: P) => R : never
 
-type ArgumentTypes<F extends Function> = F extends (...args: infer A) => any ? A : never;
+type ArgumentTypes<F extends Function> = OmitFirstArgument<F>
 
-type QueryWithHelpersFixed<TArgs, TDocType, TQueryHelpers> = (TArgs) => Query<
-  Array<HydratedDocument<DocumentType<TDocType, TQueryHelpers>, object, object>>,
-  Document<TDocType, TQueryHelpers>
-  >
+type QueryWithHelpersFixed<TDocType, TQueryHelpers, TSearchArgs = void>
+  = TSearchArgs extends void
+  ? () => Query<Array<HydratedDocument<DocumentType<TDocType, TQueryHelpers>, object, object>>, Document<TDocType, TQueryHelpers>>
+  : (TArgs) => Query<Array<HydratedDocument<DocumentType<TDocType, TQueryHelpers>, object, object>>, Document<TDocType, TQueryHelpers>>
 
 interface QueryHelpers {
-  findByName: QueryWithHelpersFixed<ArgumentTypes<typeof findByName>, Person, QueryHelpers>
+  findByName: QueryWithHelpersFixed<Person, QueryHelpers, ArgumentTypes<typeof findByName>>
+  findByNoArg: QueryWithHelpersFixed<Person, QueryHelpers>
 }
 
 function findByName(this: types.QueryHelperThis<typeof Person, QueryHelpers>, name: string) {
   return this.find({ name })
 }
+
+function findByNoArg(this: types.QueryHelperThis<typeof Person, QueryHelpers>) { return this }
 
 class Address {
   @prop()
@@ -37,6 +41,7 @@ class Address {
 }
 
 @queryMethod(findByName)
+@queryMethod(findByNoArg)
 class Person {
   @prop()
   public name: string
@@ -80,7 +85,11 @@ class Person {
   }
 
   console.log('👇 Find docs with name of `n1` 👇')
-  const docs = await PersonModel.find().findByName('n1');
+  const docs = await PersonModel.find().findByName('n1')
+
+  const a = await PersonModel.find().findByNoArg()
+  const x = await PersonModel.find().findByName('n1')
+  const b = await PersonModel.find().findByName('n1', 'b2')
 
   for (let doc of docs) {
     // For when addresses are a sub-doc
