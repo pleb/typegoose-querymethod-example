@@ -15,19 +15,29 @@ type OmitFirstArgument<F> = F extends (x: any, ...args: infer P) => infer R ? (.
 
 type ArgumentTypes<F extends (...args: any) => any> = OmitFirstArgument<F>
 
-type QueryWithHelpersFixed<TDocType, TQueryHelpers, TSearchArgs = void>
-  = TSearchArgs extends void
-  ? () => Query<Array<HydratedDocument<DocumentType<TDocType, TQueryHelpers>, object, object>>, Document<TDocType, TQueryHelpers>>
-  : (TSearchArgs) => Query<Array<HydratedDocument<DocumentType<TDocType, TQueryHelpers>, object, object>>, Document<TDocType, TQueryHelpers>>
+// type QueryWithHelpersFixed<TDocType, TQueryHelpers, TSearchArgs = void>
+//   = TSearchArgs extends void
+//   ? () => Query<Array<HydratedDocument<DocumentType<TDocType, TQueryHelpers>, object, object>>, Document<TDocType, TQueryHelpers>>
+//   : (TSearchArgs) => Query<Array<HydratedDocument<DocumentType<TDocType, TQueryHelpers>, object, object>>, Document<TDocType, TQueryHelpers>>
+
+type QueryWithHelpersFixed<TDocType, TQueryHelpers, TSearchArgs extends (...args: any) => any>
+  = (...args: [ArgumentTypes<TSearchArgs>]) => Query<Array<HydratedDocument<DocumentType<TDocType, TQueryHelpers>, object, object>>, Document<TDocType, TQueryHelpers>>
+
+type QueryWithHelpersWithArgsFixed<TDocType, TQueryHelpers>
+  = () => Query<Array<HydratedDocument<DocumentType<TDocType, TQueryHelpers>, object, object>>, Document<TDocType, TQueryHelpers>>
 
 interface QueryHelpers {
-  findByName: QueryWithHelpersFixed<Person, QueryHelpers, ArgumentTypes<typeof findByName>>
-  findByNoArg: QueryWithHelpersFixed<Person, QueryHelpers>
+  // findByName: QueryWithHelpersFixed<Person, QueryHelpers, ArgumentTypes<typeof findByName>>
+  findByName: QueryWithHelpersFixed<Person, QueryHelpers, typeof findByName>
+  findByMultiArg: QueryWithHelpersFixed<Person, QueryHelpers, typeof findByName>
+  findByNoArg: QueryWithHelpersWithArgsFixed<Person, QueryHelpers>
 }
 
 function findByName(this: types.QueryHelperThis<typeof Person, QueryHelpers>, name: string) {
   return this.find({ name })
 }
+
+function findByMultiArg(this: types.QueryHelperThis<typeof Person, QueryHelpers>, arg1: string, arg2: number) { return this }
 
 function findByNoArg(this: types.QueryHelperThis<typeof Person, QueryHelpers>) { return this }
 
@@ -42,6 +52,7 @@ class Address {
 
 @queryMethod(findByName)
 @queryMethod(findByNoArg)
+@queryMethod(findByMultiArg)
 class Person {
   @prop()
   public name: string
@@ -87,11 +98,12 @@ class Person {
   console.log('👇 Find docs with name of `n1` 👇')
   const docs = await PersonModel.find().findByName('n1')
 
-  const a = await PersonModel.find().findByNoArg()
-  const x = await PersonModel.find().findByName('n1')
-  const y = await PersonModel.find().findByName() // should fail ✅
-  const b = await PersonModel.find().findByName('n1', 'b2')  // should fail ✅
-  const b = await PersonModel.find().findByName(1) // should fail ❌
+  const a = await PersonModel.find().findByNoArg() // should not fail ✅
+  const b = await PersonModel.find().findByName('n1') // should not fail ❌
+  const c = await PersonModel.find().findByName() // should fail ❌
+  const d = await PersonModel.find().findByName('n1', 'b2')  // should fail ✅
+  const e = await PersonModel.find().findByName(1) // should fail ❌
+  const f = await PersonModel.find().findByMultiArg('n1', 2) // should not fail ❌
 
   for (let doc of docs) {
     // For when addresses are a sub-doc
