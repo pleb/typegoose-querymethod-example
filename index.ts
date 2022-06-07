@@ -89,7 +89,9 @@ class Person {
 
   const a = await PersonModel.find().findByNoArg()
   const x = await PersonModel.find().findByName('n1')
-  const b = await PersonModel.find().findByName('n1', 'b2')
+  const y = await PersonModel.find().findByName() // should fail ✅
+  const b = await PersonModel.find().findByName('n1', 'b2')  // should fail ✅
+  const b = await PersonModel.find().findByName(1) // should fail ❌
 
   for (let doc of docs) {
     // For when addresses are a sub-doc
